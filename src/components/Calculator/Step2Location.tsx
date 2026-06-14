@@ -8,6 +8,15 @@ interface Props {
   apiKey: string
 }
 
+function cityFromDisplay(displayName: string): string {
+  const SKIP = /^(województwo|powiat|gmina|Polska)/i
+  const parts = displayName.split(',').map(s => s.trim()).reverse()
+  for (const p of parts) {
+    if (p && !SKIP.test(p)) return p
+  }
+  return parts[parts.length - 1] ?? displayName
+}
+
 export default function Step2Location({ state, onUpdate, apiKey }: Props) {
 
   const mapRef = useRef<LeafletMap | null>(null)
@@ -80,7 +89,7 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
         const zones: FloodZone[] = ['brak', 'brak', 'brak', 'Q500', 'Q100']
         const fz = zones[Math.floor(Math.random() * zones.length)]
         const exp = fz === 'brak'
-          ? `Lokalizacja ${city.split(',')[0]} nie wykazuje istotnego ryzyka powodziowego.`
+          ? `Lokalizacja ${cityFromDisplay(city)} nie wykazuje istotnego ryzyka powodziowego.`
           : fz === 'Q500'
           ? 'Obszar może być narażony na powódź raz na 500 lat. Rekomendujemy ochronę przeciwpowodziową.'
           : 'Strefa zagrożenia Q100 (raz na 100 lat). Silnie rekomendujemy ubezpieczenie od zalania.'
