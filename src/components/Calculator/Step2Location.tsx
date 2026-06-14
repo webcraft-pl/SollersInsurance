@@ -69,9 +69,12 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
     }
   }, [state.lat])
 
+  const [floodStatus, setFloodStatus] = useState('')
+
   const doFlood = async () => {
     if (!addr.trim()) return
     setLoading(true)
+    setFloodStatus('Szukam adresu…')
     onUpdate({ addr: addr.trim(), floodLoading: true, floodZone: null, floodExp: '' })
 
     try {
@@ -82,16 +85,16 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
       if (!gd.length) {
         alert('Nie znaleziono adresu w Polsce. Spróbuj podać pełniejszy adres.')
         setLoading(false)
+        setFloodStatus('')
         onUpdate({ floodLoading: false })
         return
       }
       const lat = parseFloat(gd[0].lat)
       const lng = parseFloat(gd[0].lon)
       const city = gd[0].display_name
-      onUpdate({ lat, lng, city, floodLoading: false })
-      setLoading(false)
+      onUpdate({ lat, lng, city })
+      setFloodStatus('Trwa sprawdzanie strefy powodziowej ISOK…')
 
-      // Flood zone via API route or direct Anthropic
       const res = await fetch('/api/flood-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,9 +104,8 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
       if (res.ok) {
         const data = await res.json() as { riskLevel: FloodZone; explanation: string; source?: string }
         setFloodSource((data.source as typeof floodSource) || '')
-        onUpdate({ floodZone: data.riskLevel, floodExp: data.explanation })
+        onUpdate({ floodZone: data.riskLevel, floodExp: data.explanation, floodLoading: false })
       } else {
-        // fallback — random demo jeśli API nie skonfigurowane
         const zones: FloodZone[] = ['brak', 'brak', 'brak', 'Q500', 'Q100']
         const fz = zones[Math.floor(Math.random() * zones.length)]
         const exp = fz === 'brak'
@@ -112,12 +114,14 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
           ? 'Obszar może być narażony na powódź raz na 500 lat. Rekomendujemy ochronę przeciwpowodziową.'
           : 'Strefa zagrożenia Q100 (raz na 100 lat). Silnie rekomendujemy ubezpieczenie od zalania.'
         setFloodSource('demo')
-        onUpdate({ floodZone: fz, floodExp: exp })
+        onUpdate({ floodZone: fz, floodExp: exp, floodLoading: false })
       }
     } catch (e) {
       console.error(e)
-      setLoading(false)
       onUpdate({ floodLoading: false })
+    } finally {
+      setLoading(false)
+      setFloodStatus('')
     }
   }
 
@@ -150,6 +154,13 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
       </div>
 
       {state.lat && <div id="map-el" ref={mapElRef} />}
+
+      {floodStatus && (
+        <div className="lrow" style={{ margin: '8px 0' }}>
+          <span className="spin" />
+          {floodStatus}
+        </div>
+      )}
 
       {fz && (
         <div>

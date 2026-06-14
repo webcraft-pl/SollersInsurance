@@ -11,7 +11,13 @@ export default function ApiBanner({ onSave, onClose }: Props) {
   return (
     <div className="api-banner">
       <i className="ti ti-robot" />
-      <span>Podaj klucz Anthropic API, aby aktywować funkcje AI (flood check, rekomendacje pakietów):</span>
+      <span>
+        Podaj klucz Anthropic API, aby aktywować AI (flood check, rekomendacje pakietów).{' '}
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer"
+          style={{ color: 'inherit', fontWeight: 700 }}>
+          Pobierz klucz →
+        </a>
+      </span>
       <input
         type="password"
         placeholder="sk-ant-..."
