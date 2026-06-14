@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sollers Insurance — Kalkulator ubezpieczeń nieruchomości</title>
+<meta name="description" content="Profesjonalny kalkulator ubezpieczeń nieruchomości Sollers Insurance">
+<meta name="theme-color" content="#78a742">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sollers Insurance">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  --green:#78a742;--green-d:#5a8030;--green-dd:#3d5a1f;--green-l:#e8f4d9;--green-ll:#f2fae8;
+  --bg:#ffffff;--bg2:#f7f8f5;--bg3:#eef0ea;
+  --text:#1a1f14;--text2:#4a5540;--text3:#7a8a6a;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);
+  --warn-bg:#fef3c7;--warn-t:#92400e;--warn-b:#f59e0b;
+  --err-bg:#fee2e2;--err-t:#991b1b;--err-b:#ef4444;
+  --ok-bg:#d1fae5;--ok-t:#065f46;--ok-b:#10b981;
+  --info-bg:#dbeafe;--info-t:#1e40af;--info-b:#3b82f6;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --r:8px;--r-lg:12px;--r-xl:16px;
+}
+[data-theme="dark"]{
+  --bg:#161d10;--bg2:#1e2718;--bg3:#273320;
+  --text:#e2f0cc;--text2:#9ab878;--text3:#6a8a52;
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);
+  --green-l:#1e2d14;--green-ll:#243618;
+  --warn-bg:#2d2000;--warn-t:#fbbf24;--warn-b:#d97706;
+  --err-bg:#2d0f0f;--err-t:#f87171;--err-b:#dc2626;
+  --ok-bg:#0a2018;--ok-t:#6ee7b7;--ok-b:#059669;
+  --info-bg:#0f1e35;--info-t:#93c5fd;--info-b:#2563eb;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+a{color:var(--green);text-decoration:none}
+
+/* HEADER */
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;box-shadow:var(--shadow)}
+.hdr-inner{max-width:1100px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1.5rem;height:60px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
+.logo-mark{width:34px;height:34px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:18px}
+.logo-text{line-height:1.1}
+.logo-top{font-size:13px;font-weight:700;color:var(--green);letter-spacing:.02em}
+.logo-bot{font-size:10px;color:var(--text3);letter-spacing:.05em;text-transform:uppercase}
+.nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto}
+.nav-tab{padding:6px 14px;font-size:13px;font-weight:500;color:var(--text2);border-radius:var(--r);cursor:pointer;white-space:nowrap;border:none;background:none;transition:background .15s,color .15s}
+.nav-tab:hover{background:var(--bg2);color:var(--text)}
+.nav-tab.active{background:var(--green-l);color:var(--green-dd)}
+[data-theme="dark"] .nav-tab.active{color:var(--green)}
+.hdr-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-icon{width:34px;height:34px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;transition:background .15s}
+.btn-icon:hover{background:var(--bg2)}
+.badge-count{background:var(--green);color:white;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:600;margin-left:4px}
+
+/* API BANNER */
+.api-banner{background:var(--info-bg);border-bottom:1px solid var(--info-b);padding:10px 1.5rem;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--info-t)}
+.api-banner input{border:1px solid var(--info-b);border-radius:var(--r);padding:5px 10px;font-size:13px;background:var(--bg);color:var(--text);width:340px;outline:none}
+.api-banner input:focus{border-color:var(--green)}
+.api-banner button{padding:5px 14px;background:var(--green);color:white;border:none;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:500}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:1.5rem}
+.page{display:none}.page.active{display:block}
+
+/* CARD */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem}
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+
+/* LAYOUT */
+.calc-layout{display:grid;grid-template-columns:1fr 280px;gap:1.25rem;align-items:start}
+@media(max-width:768px){.calc-layout{grid-template-columns:1fr}}
+
+/* PROGRESS */
+.progress{display:flex;margin-bottom:1.5rem}
+.ps{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+.ps:not(:last-child)::after{content:'';position:absolute;top:14px;left:calc(50% + 15px);width:calc(100% - 30px);height:1px;background:var(--border)}
+.ps.done:not(:last-child)::after{background:var(--green)}
+.ps-c{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--bg);color:var(--text3);margin-bottom:4px;position:relative;z-index:1}
+.ps.done .ps-c{background:var(--green);border-color:var(--green);color:white}
+.ps.active .ps-c{background:var(--green-l);border-color:var(--green);color:var(--green-dd)}
+[data-theme="dark"] .ps.active .ps-c{color:var(--green)}
+.ps-l{font-size:10px;color:var(--text3);text-align:center}
+.ps.active .ps-l{color:var(--text);font-weight:500}
+
+/* STEP CONTENT */
+.step-h{font-size:16px;font-weight:600;margin-bottom:1rem}
+
+/* TYPE CARDS */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tc{border:1px solid var(--border);border-radius:var(--r-lg);padding:.875rem;cursor:pointer;background:var(--bg);transition:all .15s}
+.tc:hover{border-color:var(--green);background:var(--green-ll)}
+.tc.sel{border:2px solid var(--green);background:var(--green-l)}
+.tc-ico{font-size:24px;color:var(--text3);margin-bottom:6px}
+.tc.sel .tc-ico,.tc:hover .tc-ico{color:var(--green)}
+.tc-n{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.tc-d{font-size:11px;color:var(--text3);line-height:1.4}
+
+/* FORM */
+.fl{margin-bottom:1rem}
+.fl-l{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.fl-h{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border .15s;font-family:inherit}
+input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(120,167,66,.15)}
+[data-theme="dark"] input,[data-theme="dark"] select{background:var(--bg2);border-color:var(--border2)}
+.iw{display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;background:var(--bg);transition:border .15s}
+.iw:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(120,167,66,.15)}
+.iw input{border:none;box-shadow:none;flex:1;min-width:0}
+.iw-s{padding:0 12px;font-size:12px;color:var(--text3);background:var(--bg2);border-left:1px solid var(--border);display:flex;align-items:center;white-space:nowrap}
+
+/* ADDRESS ROW */
+.arow{display:flex;gap:8px}
+.arow input{flex:1}
+
+/* BUTTONS */
+.btn{padding:8px 18px;font-size:13px;font-weight:600;border-radius:var(--r);cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg2)}
+.btn.prim{background:var(--green);border-color:var(--green-d);color:white}
+.btn.prim:hover{background:var(--green-d)}
+.btn.sm{padding:6px 14px;font-size:12px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text2)}
+.btn.ghost:hover{background:var(--bg2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* TOGGLE */
+.tog-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.tog-row:last-child{border-bottom:none}
+.tog-n{font-size:13px;font-weight:600;color:var(--text)}
+.tog-d{font-size:11px;color:var(--text3);margin-top:1px}
+.tog-disc{font-size:11px;color:var(--ok-t);font-weight:600;margin-top:1px}
+.toggle{width:40px;height:22px;border-radius:11px;background:var(--border2);border:none;cursor:pointer;position:relative;flex-shrink:0;transition:background .2s}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+
+/* COVERAGE */
+.cov{border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:7px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;background:var(--bg);transition:all .15s}
+.cov:hover:not(.cov-l):not(.cov-d){border-color:var(--green);background:var(--green-ll)}
+.cov.cov-s{border:2px solid var(--green);background:var(--green-l)}
+.cov.cov-l{border-color:var(--ok-b);background:var(--ok-bg);cursor:default}
+.cov.cov-d{opacity:.4;cursor:not-allowed}
+.cov.cov-w{border-color:var(--warn-b);background:var(--warn-bg)}
+.cov.cov-s.cov-w{border:2px solid var(--err-b);background:var(--err-bg)}
+.ccb{width:18px;height:18px;border-radius:4px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;background:var(--bg)}
+.cov.cov-s .ccb,.cov.cov-l .ccb{background:var(--green);border-color:var(--green)}
+.cbody{flex:1}
+.cn{font-size:13px;font-weight:600;color:var(--text)}
+.cd{font-size:11px;color:var(--text2);margin-top:1px;line-height:1.4}
+.cp{font-size:12px;font-weight:600;color:var(--text3);white-space:nowrap;margin-top:1px}
+.cov.cov-s .cp{color:var(--green-dd)}
+[data-theme="dark"] .cov.cov-s .cp{color:var(--green)}
+
+/* FLOOD */
+#map-el{height:200px;border-radius:var(--r);border:1px solid var(--border);overflow:hidden;margin-bottom:10px}
+.fbadge{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:var(--r);font-size:13px;font-weight:600;margin-bottom:6px}
+.fb-ok{background:var(--ok-bg);color:var(--ok-t)}
+.fb-w{background:var(--warn-bg);color:var(--warn-t)}
+.fb-d{background:var(--err-bg);color:var(--err-t)}
+.fexp{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* WARN BOX */
+.warn-box{padding:10px 14px;background:var(--warn-bg);border-radius:var(--r);border:1px solid var(--warn-b);display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.warn-box-t{font-size:13px;font-weight:600;color:var(--warn-t)}
+.warn-box-d{font-size:11px;color:var(--warn-t);margin-top:2px;opacity:.8}
+
+/* PRICE PANEL */
+.pp{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem;position:sticky;top:72px}
+.pp-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem}
+.pp-amount{font-size:34px;font-weight:700;color:var(--text);line-height:1}
+.pp-mo{font-size:12px;color:var(--text3);margin-top:3px;margin-bottom:.875rem}
+.sep{border:none;border-top:1px solid var(--border);margin:.875rem 0}
+.ppl{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px;align-items:flex-start;gap:8px}
+.ppl .pl{flex:1}
+.ppl .pv{color:var(--text);font-weight:500;white-space:nowrap}
+.ppl.disc .pv{color:var(--ok-t)}
+.ppl.tot{font-weight:700;font-size:13px;color:var(--text);padding-top:6px;border-top:1px solid var(--border);margin-top:4px}
+.rf{display:flex;gap:8px;padding:8px 10px;border-radius:var(--r);margin-bottom:5px;font-size:11px;line-height:1.4;align-items:flex-start}
+.rf.w{background:var(--warn-bg);color:var(--warn-t)}
+.rf.d{background:var(--err-bg);color:var(--err-t)}
+.rf i{flex-shrink:0;margin-top:1px}
+
+/* PACKAGES */
+.pkg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:1rem}
+@media(max-width:600px){.pkg-grid{grid-template-columns:1fr}}
+.pkg{border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem;background:var(--bg);position:relative}
+.pkg.recommended{border:2px solid var(--green);background:var(--green-ll)}
+.pkg-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--green);color:white;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap}
+.pkg-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.pkg-price{font-size:22px;font-weight:700;color:var(--green);line-height:1;margin-bottom:8px}
+.pkg-price span{font-size:12px;font-weight:400;color:var(--text3)}
+.pkg-feat{font-size:11px;color:var(--text2);line-height:1.6}
+.pkg-feat li{list-style:none;padding-left:0;display:flex;gap:5px;align-items:flex-start}
+.pkg-feat li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.pkg-ai{font-size:11px;color:var(--text3);font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.4}
+
+/* QUOTES LIST */
+.ql-item{display:flex;align-items:center;gap:12px;padding:12px 1rem;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);margin-bottom:8px}
+.ql-icon{width:40px;height:40px;border-radius:var(--r);background:var(--green-l);display:flex;align-items:center;justify-content:center;color:var(--green-dd);font-size:20px;flex-shrink:0}
+[data-theme="dark"] .ql-icon{background:var(--green-l);color:var(--green)}
+.ql-body{flex:1;min-width:0}
+.ql-title{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ql-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.ql-price{font-size:16px;font-weight:700;color:var(--green);white-space:nowrap}
+.ql-actions{display:flex;gap:6px;flex-shrink:0}
+.status-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.03em}
+.st-new{background:var(--info-bg);color:var(--info-t)}
+.st-contact{background:var(--warn-bg);color:var(--warn-t)}
+.st-closed{background:var(--ok-bg);color:var(--ok-t)}
+
+/* RESULT PAGE */
+.result-top{text-align:center;padding:1.25rem 0;border-bottom:1px solid var(--border);margin-bottom:1.25rem}
+.res-ico{font-size:42px;color:var(--green);margin-bottom:6px}
+.res-amount{font-size:48px;font-weight:700;color:var(--text);line-height:1}
+.res-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.sum-c{background:var(--bg2);border-radius:var(--r);padding:10px 12px}
+.sum-l{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;font-weight:600}
+.sum-v{font-size:14px;font-weight:600;color:var(--text)}
+.cbadge{display:inline-block;background:var(--ok-bg);color:var(--ok-t);font-size:11px;padding:3px 8px;border-radius:10px;margin:2px;font-weight:600}
+.share-box{background:var(--bg2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;margin:1rem 0}
+.share-url{font-size:13px;color:var(--info-t);flex:1;word-break:break-all}
+.rate-tabs{display:flex;gap:6px;margin:.75rem 0}
+.rate-tab{padding:5px 12px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;background:var(--bg);color:var(--text2)}
+.rate-tab.active{background:var(--green-l);border-color:var(--green);color:var(--green-dd);font-weight:600}
+[data-theme="dark"] .rate-tab.active{color:var(--green)}
+
+/* CONFIGURATOR */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start}
+@media(max-width:768px){.cfg-grid{grid-template-columns:1fr}}
+.cfg-section-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.cfg-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:12px}
+.cfg-row:last-child{border-bottom:none}
+.cfg-row-l{flex:1}
+.cfg-row-n{font-size:13px;font-weight:500;color:var(--text)}
+.cfg-row-d{font-size:11px;color:var(--text3)}
+.cfg-input{width:90px;text-align:right;padding:5px 8px;font-size:13px}
+.cfg-slider{width:100%;margin-top:8px;accent-color:var(--green)}
+.preview-box{background:var(--green-ll);border:1px solid var(--green);border-radius:var(--r-lg);padding:1rem}
+[data-theme="dark"] .preview-box{background:var(--green-l)}
+.preview-title{font-size:11px;font-weight:700;color:var(--green-dd);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem}
+[data-theme="dark"] .preview-title{color:var(--green)}
+.preview-amount{font-size:28px;font-weight:700;color:var(--green-dd);margin-bottom:4px}
+[data-theme="dark"] .preview-amount{color:var(--green)}
+.cfg-lock{padding:2.5rem;text-align:center}
+.cfg-lock-icon{font-size:48px;color:var(--text3);margin-bottom:1rem}
+
+/* AGENT */
+.agent-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+@media(max-width:600px){.agent-stats{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem}
+.stat-n{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:600}
+.stat-v{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* ANIMATIONS */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--text2);border-radius:50%;animation:spin .8s linear infinite}
+.lrow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);padding:8px 0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .2s ease}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty i{font-size:48px;margin-bottom:1rem;display:block}
+</style>
+</head>
+<body>
+
+<!-- API BANNER -->
+<div class="api-banner" id="api-banner" style="display:none">
+  <i class="ti ti-robot"></i>
+  <span>Podaj klucz Anthropic API, aby aktywować funkcje AI (flood check, rekomendacje pakietów):</span>
+  <input type="password" id="api-key-input" placeholder="sk-ant-...">
+  <button onclick="saveApiKey()">Aktywuj AI</button>
+  <button onclick="document.getElementById('api-banner').style.display='none'" style="background:transparent;border:none;cursor:pointer;color:var(--info-t);margin-left:4px"><i class="ti ti-x"></i></button>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <a class="logo" href="#" onclick="return false">
+      <div class="logo-mark"><i class="ti ti-shield-check"></i></div>
+      <div class="logo-text">
+        <div class="logo-top">Sollers Insurance</div>
+        <div class="logo-bot">Property Calculator · Demo</div>
+      </div>
+    </a>
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('calc')" id="tab-calc"><i class="ti ti-calculator"></i> Kalkulator</button>
+      <button class="nav-tab" onclick="showTab('quotes')" id="tab-quotes"><i class="ti ti-file-text"></i> Moje oferty <span class="badge-count" id="quotes-count">0</span></button>
+      <button class="nav-tab" onclick="showTab('agent')" id="tab-agent"><i class="ti ti-users"></i> Panel agenta</button>
+      <button class="nav-tab" onclick="showTab('config')" id="tab-config"><i class="ti ti-settings"></i> Konfiguracja produktu</button>
+    </nav>
+    <div class="hdr-actions">
+      <button class="btn-icon" onclick="toggleDark()" title="Zmień motyw"><i class="ti ti-moon" id="dark-icon"></i></button>
+      <button class="btn-icon" onclick="showApiBanner()" title="Klucz API"><i class="ti ti-key"></i></button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KALKULATOR -->
+  <div class="page active" id="page-calc">
+    <div class="calc-layout">
+      <div id="calc-form"></div>
+      <div id="price-panel"></div>
+    </div>
+  </div>
+
+  <!-- MOJE OFERTY -->
+  <div class="page" id="page-quotes">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:18px;font-weight:700">Moje oferty</h2>
+      <button class="btn sm" onclick="showTab('calc');resetCalc()"><i class="ti ti-plus"></i> Nowe kwotowanie</button>
+    </div>
+    <div id="quotes-list"></div>
+  </div>
+
+  <!-- PANEL AGENTA -->
+  <div class="page" id="page-agent">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <h2 style="font-size:18px;font-weight:700">Panel agenta</h2>
+      <div style="display:flex;gap:8px">
+        <select id="agent-filter" onchange="renderAgent()" style="font-size:13px;padding:6px 10px;width:auto">
+          <option value="all">Wszystkie statusy</option>
+          <option value="new">Nowe</option>
+          <option value="contact">W kontakcie</option>
+          <option value="closed">Zamknięte</option>
+        </select>
+      </div>
+    </div>
+    <div class="agent-stats" id="agent-stats"></div>
+    <div id="agent-list"></div>
+  </div>
+
+  <!-- KONFIGURACJA PRODUKTU -->
+  <div class="page" id="page-config">
+    <div id="config-content"></div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ==================== CONFIG ==================== */
+const CFG={
+  baseRate:0.0015,
+  matMult:{mur:1.0,drewno:1.35,prefabrykat:1.1},
+  ageMult:{pre1945nr:1.3,pre1945r:1.1,y45_70:1.15,y70_00:1.05,modern:1.0},
+  secDisc:{alarm:7,monitoring:9,doors:4,fire:3},
+  opts:{
+    ruchomosci:{on:true,pct:0.0004,fixed:null,label:'Ruchomości domowe'},
+    oc:{on:true,pct:null,fixed:149,label:'OC w życiu prywatnym'},
+    assistance:{on:true,pct:null,fixed:119,label:'Assistance 24h'},
+    szyby:{on:true,pct:null,fixed:79,label:'Szyby i oszklenia'},
+    zalanie:{on:true,pct:null,fixed:149,label:'Zalanie i powódź',q500:269,q100:499},
+    przepięcie:{on:true,pct:null,fixed:49,label:'Przepięcie elektryczne'},
+    kradziez:{on:true,pct:0.00025,fixed:null,label:'Kradzież z włamaniem'},
+    wandalizm:{on:true,pct:null,fixed:59,label:'Wandalizm'},
+  },
+  minVal:100000,maxVal:5000000
+};
+
+/* ==================== STATE ==================== */
+const S={
+  step:1,type:null,addr:'',lat:null,lng:null,city:'',
+  floodZone:null,floodExp:'',floodLoading:false,
+  year:1990,material:'mur',area:120,value:500000,floors:2,renovation:false,
+  alarm:false,monitoring:false,doors:false,fire:false,
+  covs:new Set(['mury']),
+  packages:null,pkgLoading:false,
+  payPeriod:'annual',
+  savedId:null
+};
+
+let LMap=null;
+let QUOTES=JSON.parse(sessionStorage.getItem('si_quotes')||'[]');
+let API_KEY=sessionStorage.getItem('si_api_key')||'';
+let CFG_UNLOCKED=false;
+
+/* ==================== UTILS ==================== */
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt=n=>(Math.round(n)).toLocaleString('pl-PL')+' zł';
+const fmtR=n=>(Math.round(n/100)*100).toLocaleString('pl-PL')+' zł';
+const uid=()=>Math.random().toString(36).substr(2,5).toUpperCase();
+const COVN={mury:'Mury i elementy stałe',ruchomosci:'Ruchomości domowe',oc:'OC w życiu prywatnym',assistance:'Assistance 24h',szyby:'Szyby i oszklenia',zalanie:'Zalanie i powódź',przepięcie:'Przepięcie elektryczne',kradziez:'Kradzież z włamaniem',wandalizm:'Wandalizm'};
+const cn=k=>COVN[k]||k;
+const TN={dom:'Dom jednorodzinny',mieszkanie:'Mieszkanie',szeregowiec:'Dom szeregowy',letniskowy:'Dom letniskowy'};
+const MN={mur:'Mur/beton',drewno:'Drewno',prefabrykat:'Prefabrykat'};
+
+function saveQuotes(){sessionStorage.setItem('si_quotes',JSON.stringify(QUOTES));document.getElementById('quotes-count').textContent=QUOTES.length;}
+function saveApiKey(){API_KEY=document.getElementById('api-key-input').value.trim();sessionStorage.setItem('si_api_key',API_KEY);document.getElementById('api-banner').style.display='none';alert('Klucz API zapisany. Funkcje AI są aktywne.');}
+function showApiBanner(){document.getElementById('api-banner').style.display='flex';}
+
+/* ==================== PRICING ==================== */
+function calcPrice(s,cfg){
+  const v=s.value||0;
+  if(!v||!s.type)return{annual:0,monthly:0,quarterly:0,lines:[],risks:[]};
+  const base=v*cfg.baseRate;
+  const mm=cfg.matMult[s.material]||1;
+  const yr=+s.year;
+  let am=1,al='';
+  if(yr<1945){am=s.renovation?cfg.ageMult.pre1945r:cfg.ageMult.pre1945nr;al=s.renovation?'Budynek historyczny (po remoncie)':'Budynek historyczny';}
+  else if(yr<1970){am=cfg.ageMult.y45_70;al='Budynek sprzed 1970 r.';}
+  else if(yr<2000){am=cfg.ageMult.y70_00;al='Budynek z lat 70–00';}
+  const bm=base*mm;let p=bm*am;
+  const lines=[],risks=[];
+  if(mm>1)lines.push({l:`Dopłata — materiał (${s.material})`,v:Math.round((mm-1)*base),t:'sur'});
+  if(am>1)lines.push({l:al,v:Math.round((am-1)*bm),t:'sur'});
+  let sm=1;
+  if(s.alarm)sm*=(1-cfg.secDisc.alarm/100);
+  if(s.monitoring)sm*=(1-cfg.secDisc.monitoring/100);
+  if(s.doors)sm*=(1-cfg.secDisc.doors/100);
+  if(s.fire)sm*=(1-cfg.secDisc.fire/100);
+  const disc=Math.round(p*(1-sm));p*=sm;
+  if(disc>0)lines.push({l:'Rabat — aktywne zabezpieczenia',v:-disc,t:'dis'});
+  lines.push({l:'Mury i elementy stałe',v:Math.round(p),t:'base'});
+  let ex=0;
+  for(const[k,o]of Object.entries(cfg.opts)){
+    if(!o.on||!s.covs.has(k)||k==='zalanie')continue;
+    const c=o.fixed||Math.round(v*o.pct);
+    lines.push({l:cn(k),v:c,t:'ext'});ex+=c;
+  }
+  if(s.covs.has('zalanie')&&cfg.opts.zalanie.on){
+    let fc=cfg.opts.zalanie.fixed;
+    if(s.floodZone==='Q500'){fc=cfg.opts.zalanie.q500||269;risks.push({t:'w',m:'Strefa Q500 — dopłata do ubezpieczenia przeciwpowodziowego +80%'});}
+    if(s.floodZone==='Q100'){fc=cfg.opts.zalanie.q100||499;risks.push({t:'d',m:'Strefa Q100 — wysokie ryzyko powodzi, istotna dopłata do składki'});}
+    lines.push({l:'Zalanie i powódź'+(s.floodZone&&s.floodZone!=='brak'?` (${s.floodZone})`:' '),v:fc,t:s.floodZone==='Q100'?'sur':'ext'});ex+=fc;
+  }
+  if(s.covs.has('kradziez')&&cfg.opts.kradziez.on){
+    let tc=Math.round(v*cfg.opts.kradziez.pct);
+    const noS=!s.alarm&&!s.monitoring;
+    if(noS){tc=Math.round(tc*1.3);risks.push({t:'w',m:'Brak alarmu i monitoringu — podwyżka za kradzież +30%'});}
+    else if(!s.alarm||!s.monitoring)tc=Math.round(tc*1.15);
+    lines.push({l:'Kradzież z włamaniem',v:tc,t:'ext'});ex+=tc;
+  }
+  if(s.material==='drewno'&&!s.fire)risks.push({t:'w',m:'Budynek drewniany bez systemu p.poż. — podwyższone ryzyko pożaru'});
+  if(s.floodZone==='Q100'&&!s.covs.has('zalanie'))risks.push({t:'d',m:'Strefa Q100 bez ochrony przeciwpowodziowej — ryzyko bez pokrycia!'});
+  const annual=Math.round(p+ex);
+  return{annual,monthly:Math.round(annual/12),quarterly:Math.round(annual/4),lines,risks};
+}
+
+/* ==================== RENDER ==================== */
+function renderProgress(){
+  const steps=['Typ','Lokalizacja','Budynek','Zabezpieczenia','Zakres'];
+  return`<div class="progress">${steps.map((s,i)=>{const n=i+1,cls=S.step>n?'ps done':S.step===n?'ps active':'ps';const ico=S.step>n?'<i class="ti ti-check"></i>':n;return`<div class="${cls}"><div class="ps-c">${ico}</div><div class="ps-l">${s}</div></div>`;}).join('')}</div>`;
+}
+
+function renderPricePanel(){
+  const{annual,monthly,quarterly,lines,risks}=calcPrice(S,CFG);
+  const has=annual>0;
+  const amount=S.payPeriod==='monthly'?monthly:S.payPeriod==='quarterly'?quarterly:annual;
+  const per=S.payPeriod==='monthly'?' / miesiąc':S.payPeriod==='quarterly'?' / kwartał':' / rok';
+  return`<div class="pp fade-in">
+    <div class="pp-label">Szacowana składka</div>
+    ${has?`
+      <div class="pp-amount">${fmt(amount)}</div>
+      <div class="pp-mo">${per}</div>
+      <div class="rate-tabs">
+        <div class="rate-tab ${S.payPeriod==='annual'?'active':''}" onclick="S.payPeriod='annual';updPP()">Roczna</div>
+        <div class="rate-tab ${S.payPeriod==='quarterly'?'active':''}" onclick="S.payPeriod='quarterly';updPP()">Kwartalna</div>
+        <div class="rate-tab ${S.payPeriod==='monthly'?'active':''}" onclick="S.payPeriod='monthly';updPP()">Miesięczna</div>
+      </div>
+    `:`<div class="pp-amount" style="font-size:22px;color:var(--text3)">—</div><div class="pp-mo">Uzupełnij dane kalkulatora</div>`}
+    ${lines.length?`
+      <div class="sep"></div>
+      ${lines.map(l=>`<div class="ppl ${l.t==='dis'?'disc':''}">
+        <span class="pl" style="${l.t==='base'?'font-weight:600;color:var(--text)':''}">${l.l}</span>
+        <span class="pv">${l.t==='dis'?'−'+fmt(-l.v):fmt(l.v)}</span>
+      </div>`).join('')}
+      <div class="ppl tot"><span>Łącznie / rok</span><span class="pv">${fmt(annual)}</span></div>
+    `:''}
+    ${risks.length?`<div class="sep"></div>${risks.map(r=>`<div class="rf ${r.t}"><i class="ti ti-alert-triangle"></i><span>${r.m}</span></div>`).join('')}`:''}
+  </div>`;
+}
+
+function renderStep1(){
+  const types=[{id:'dom',ico:'ti-home-2',n:'Dom jednorodzinny',d:'Wolnostojący lub bliźniak'},{id:'mieszkanie',ico:'ti-building',n:'Mieszkanie',d:'W bloku lub kamienicy'},{id:'szeregowiec',ico:'ti-layout-rows',n:'Dom szeregowy',d:'Zabudowa szeregowa'},{id:'letniskowy',ico:'ti-tent',n:'Dom letniskowy',d:'Rekreacyjny, sezonowy'}];
+  return`<div class="card fade-in">
+    <div class="step-h">Jaki typ nieruchomości ubezpieczyć?</div>
+    <div class="tgrid">${types.map(t=>`<div class="tc ${S.type===t.id?'sel':''}" onclick="S.type='${t.id}';render()"><div class="tc-ico"><i class="ti ${t.ico}"></i></div><div class="tc-n">${t.n}</div><div class="tc-d">${t.d}</div></div>`).join('')}</div>
+    <div class="nav"><span></span><button class="btn prim" onclick="S.step=2;render()" ${!S.type?'disabled':''}>Dalej <i class="ti ti-arrow-right"></i></button></div>
+  </div>`;
+}
+
+function renderStep2(){
+  const fz=S.floodZone;
+  const fcls=fz==='brak'?'fb-ok':fz==='Q500'?'fb-w':fz==='Q100'?'fb-d':'';
+  const flbl=fz==='brak'?'Brak istotnego ryzyka powodziowego':fz==='Q500'?'Strefa zagrożenia Q500 (raz na 500 lat)':fz==='Q100'?'Strefa zagrożenia Q100 (raz na 100 lat)':'';
+  const fico=fz==='brak'?'ti-shield-check':'ti-alert-triangle';
+  return`<div class="card fade-in">
+    <div class="step-h">Gdzie znajduje się nieruchomość?</div>
+    <div class="fl">
+      <label class="fl-l">Adres nieruchomości</label>
+      <div class="arow">
+        <input type="text" id="addr-in" value="${esc(S.addr)}" placeholder="np. ul. Wiślana 12, Wrocław" onkeydown="if(event.key==='Enter')doFlood()">
+        <button class="btn" id="btn-fl" onclick="doFlood()" ${S.floodLoading?'disabled':''}>
+          ${S.floodLoading?'<span class="spin"></span> Sprawdzam...':`<i class="ti ti-map-pin"></i> Sprawdź strefę`}
+        </button>
+      </div>
+      <div class="fl-h">Podaj adres w Polsce — sprawdzimy strefę zagrożenia powodziowego ISOK i pokażemy lokalizację na mapie</div>
+    </div>
+    ${S.lat?`<div id="map-el"></div>`:''}
+    <div id="flood-res">
+      ${fz?`<span class="fbadge ${fcls}"><i class="ti ${fico}"></i>${flbl}</span>${S.floodExp?`<div class="fexp">${esc(S.floodExp)}</div>`:''}`:''}
+    </div>
+    <div class="nav">
+      <button class="btn ghost" onclick="S.step=1;render()"><i class="ti ti-arrow-left"></i> Wstecz</button>
+      <button class="btn prim" onclick="S.step=3;render()">Dalej <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderStep3(){
+  const isH=S.type!=='mieszkanie';
+  const showRen=+S.year<1945;
+  return`<div class="card fade-in">
+    <div class="step-h">Parametry budynku</div>
+    <div class="g2">
+      <div class="fl"><label class="fl-l">Rok budowy</label>
+        <input type="number" id="f-yr" value="${S.year}" min="1800" max="2025" oninput="S.year=parseInt(this.value)||1990;updPP();if(+this.value<1945||this.value>=1945)renderStep3inner()">
+      </div>
+      <div class="fl"><label class="fl-l">Materiał ścian</label>
+        <select id="f-mat" onchange="S.material=this.value;updPP()">
+          <option value="mur" ${S.material==='mur'?'selected':''}>Mur (cegła / beton)</option>
+          <option value="drewno" ${S.material==='drewno'?'selected':''}>Drewno / szkielet</option>
+          <option value="prefabrykat" ${S.material==='prefabrykat'?'selected':''}>Prefabrykat / wielka płyta</option>
+        </select>
+      </div>
+    </div>
+    ${showRen?`<div class="warn-box"><div><div class="warn-box-t"><i class="ti ti-history"></i> Budynek sprzed 1945 roku</div><div class="warn-box-d">Czy budynek przeszedł gruntowny remont kapitalny?</div></div><button class="toggle ${S.renovation?'on':''}" id="tog-ren" onclick="S.renovation=!S.renovation;this.classList.toggle('on');updPP()"></button></div>`:''}
+    <div class="g2">
+      <div class="fl"><label class="fl-l">Powierzchnia użytkowa</label>
+        <div class="iw"><input type="number" id="f-area" value="${S.area}" min="20" max="2000" oninput="S.area=parseInt(this.value)||0;updPP()"><span class="iw-s">m²</span></div>
+      </div>
+      ${isH?`<div class="fl"><label class="fl-l">Kondygnacje</label>
+        <select id="f-fl" onchange="S.floors=parseInt(this.value)">
+          <option value="1" ${S.floors===1?'selected':''}>1 — parterowy</option>
+          <option value="2" ${S.floors===2?'selected':''}>2 kondygnacje</option>
+          <option value="3" ${S.floors===3?'selected':''}>3 i więcej</option>
+        </select>
+      </div>`:'<div></div>'}
+    </div>
+    <div class="fl"><label class="fl-l">Szacowana wartość nieruchomości</label>
+      <div class="iw"><input type="number" id="f-val" value="${S.value}" min="${CFG.minVal}" max="${CFG.maxVal}" step="10000" oninput="S.value=parseInt(this.value)||0;updPP()"><span class="iw-s">PLN</span></div>
+      <div class="fl-h">Wartość odtworzeniowa — koszt odbudowy w razie całkowitej straty</div>
+    </div>
+    <div class="nav">
+      <button class="btn ghost" onclick="S.step=2;render()"><i class="ti ti-arrow-left"></i> Wstecz</button>
+      <button class="btn prim" onclick="S.step=4;render()">Dalej <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderStep4(){
+  const isH=S.type!=='mieszkanie';
+  const toggs=[{id:'alarm',n:'System alarmowy',d:'Aktywny alarm z powiadomieniem centrum',di:`–${CFG.secDisc.alarm}% składki`,v:S.alarm},{id:'monitoring',n:'Monitoring 24h',d:'Kamera lub ochrona fizyczna obiektu',di:`–${CFG.secDisc.monitoring}% składki`,v:S.monitoring},{id:'doors',n:'Drzwi antywłamaniowe',d:'Klasa C lub wyższa (certyfikat RC3+)',di:`–${CFG.secDisc.doors}% składki`,v:S.doors},...(isH?[{id:'fire',n:'System p.poż.',d:'Czujniki dymu, hydrant lub gaśnice',di:`–${CFG.secDisc.fire}% składki`,v:S.fire}]:[])];
+  return`<div class="card fade-in">
+    <div class="step-h">Zabezpieczenia nieruchomości</div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:1rem">Każde aktywne zabezpieczenie obniża składkę roczną.</p>
+    ${toggs.map(t=>`<div class="tog-row"><div><div class="tog-n">${t.n}</div><div class="tog-d">${t.d}</div><div class="tog-disc">${t.di}</div></div><button class="toggle ${t.v?'on':''}" onclick="S.${t.id}=!S.${t.id};this.classList.toggle('on');updPP()"></button></div>`).join('')}
+    <div class="nav">
+      <button class="btn ghost" onclick="S.step=3;render()"><i class="ti ti-arrow-left"></i> Wstecz</button>
+      <button class="btn prim" onclick="S.step=5;render()">Dalej <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderStep5(){
+  const v=S.value||500000;
+  const isLet=S.type==='letniskowy';
+  const fz=S.floodZone;
+  const fc=fz==='Q100'?(CFG.opts.zalanie.q100||499):fz==='Q500'?(CFG.opts.zalanie.q500||269):(CFG.opts.zalanie.fixed||149);
+  const th=Math.round(v*(CFG.opts.kradziez.pct||0.00025)*(!S.alarm&&!S.monitoring?1.3:(!S.alarm||!S.monitoring)?1.15:1));
+  const opts=[
+    {id:'mury',locked:true,n:'Mury i elementy stałe',d:'Ściany, dach, fundamenty, stałe elementy wyposażenia',p:fmt(Math.round(v*CFG.baseRate))},
+    {id:'ruchomosci',show:CFG.opts.ruchomosci.on,n:'Ruchomości domowe',d:'Meble, AGD, elektronika, odzież i inne',p:fmt(Math.round(v*(CFG.opts.ruchomosci.pct||0.0004)))},
+    {id:'oc',show:CFG.opts.oc.on&&!isLet,n:'OC w życiu prywatnym',d:'Odpowiedzialność za szkody wyrządzone osobom trzecim',p:`${CFG.opts.oc.fixed||149} zł`},
+    {id:'assistance',show:CFG.opts.assistance.on,n:'Assistance 24h',d:'Pomoc hydraulika, elektryka, ślusarza 24/7',p:`${CFG.opts.assistance.fixed||119} zł`},
+    {id:'szyby',show:CFG.opts.szyby.on,n:'Szyby i oszklenia',d:'Stłuczenia szyb okiennych, drzwiowych, witryn',p:`${CFG.opts.szyby.fixed||79} zł`},
+    {id:'zalanie',show:CFG.opts.zalanie.on,warn:fz==='Q100'||fz==='Q500',n:'Zalanie i powódź'+(fz&&fz!=='brak'?` — strefa ${fz}`:''),d:fz==='Q100'?'⚠ Wysoka strefa ryzyka — znaczna dopłata za ryzyko powodziowe':fz==='Q500'?'⚠ Umiarkowana strefa ryzyka — dopłata za ryzyko powodziowe':'Zalanie wodą opadową, pęknięcie rur, powódź rzeczna',p:fmt(fc)+(fz&&fz!=='brak'?' *':'')},
+    {id:'przepięcie',show:CFG.opts.przepięcie.on,n:'Przepięcie elektryczne',d:'Uszkodzenia sprzętu od przepięcia w sieci energetycznej',p:`${CFG.opts.przepięcie.fixed||49} zł`},
+    {id:'kradziez',show:CFG.opts.kradziez.on,n:'Kradzież z włamaniem',d:'Kradzież mienia na skutek włamania lub rabunku'+((!S.alarm&&!S.monitoring)?' — dopłata za brak zabezpieczeń':''),p:fmt(th)},
+    {id:'wandalizm',show:CFG.opts.wandalizm.on,n:'Wandalizm',d:'Umyślne zniszczenie lub uszkodzenie nieruchomości',p:`${CFG.opts.wandalizm.fixed||59} zł`},
+  ].filter(o=>o.locked||o.show);
+  return`<div class="card fade-in">
+    <div class="step-h">Wybierz zakres ochrony</div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:1rem">Ceny podane rocznie. Kliknij, aby włączyć lub wyłączyć opcję.</p>
+    ${opts.map(o=>{const sel=S.covs.has(o.id);const cls=o.locked?'cov cov-l':sel&&o.warn?'cov cov-s cov-w':o.warn?'cov cov-w':sel?'cov cov-s':'cov';return`<div class="${cls}"${!o.locked?` onclick="toggleCov('${o.id}')"`:''}><div class="ccb">${sel||o.locked?`<i class="ti ti-check" style="font-size:11px;color:white"></i>`:''}</div><div class="cbody"><div class="cn">${o.n}</div><div class="cd">${o.d}</div></div><div class="cp">${o.p}</div></div>`;}).join('')}
+    ${fz&&fz!=='brak'?`<p style="font-size:11px;color:var(--text3);margin-top:6px">* Cena uwzględnia dopłatę za strefę zagrożenia powodziowego ${fz}.</p>`:''}
+    <div class="nav">
+      <button class="btn ghost" onclick="S.step=4;render()"><i class="ti ti-arrow-left"></i> Wstecz</button>
+      <button class="btn prim" onclick="S.step=6;S.packages=null;render();loadPackages()">Zobacz ofertę <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>`;
+}
+
+function toggleCov(id){if(S.covs.has(id))S.covs.delete(id);else S.covs.add(id);renderStep5Only();updPP();}
+function renderStep5Only(){const el=document.getElementById('calc-form');if(el&&S.step===5)el.innerHTML=renderStep5();}
+
+function renderResult(){
+  const{annual,monthly,quarterly,lines,risks}=calcPrice(S,CFG);
+  const amount=S.payPeriod==='monthly'?monthly:S.payPeriod==='quarterly'?quarterly:annual;
+  const per=S.payPeriod==='monthly'?' / miesiąc':S.payPeriod==='quarterly'?' / kwartał':' / rok';
+  const sec=[S.alarm&&'Alarm',S.monitoring&&'Monitoring 24h',S.doors&&'Drzwi antywłamaniowe',S.fire&&'System p.poż.'].filter(Boolean);
+  const qid=S.savedId||uid();
+  const shareUrl=`${location.origin}/q/${qid}`;
+  return`<div class="card fade-in">
+    <div class="result-top">
+      <div class="res-ico"><i class="ti ti-shield-check"></i></div>
+      <div class="res-amount">${fmt(amount)}</div>
+      <div class="res-sub">${per} · roczna ${fmt(annual)}</div>
+      <div class="rate-tabs" style="justify-content:center;margin-top:10px">
+        <div class="rate-tab ${S.payPeriod==='annual'?'active':''}" onclick="S.payPeriod='annual';renderResult2()">Roczna</div>
+        <div class="rate-tab ${S.payPeriod==='quarterly'?'active':''}" onclick="S.payPeriod='quarterly';renderResult2()">Kwartalna</div>
+        <div class="rate-tab ${S.payPeriod==='monthly'?'active':''}" onclick="S.payPeriod='monthly';renderResult2()">Miesięczna</div>
+      </div>
+    </div>
+    ${risks.length?risks.map(r=>`<div class="rf ${r.t==='w'?'w':'d'}" style="margin-bottom:8px"><i class="ti ti-alert-triangle"></i><span>${r.m}</span></div>`).join(''):''}
+    <div class="sum-grid">
+      <div class="sum-c"><div class="sum-l">Typ</div><div class="sum-v">${TN[S.type]||''}</div></div>
+      <div class="sum-c"><div class="sum-l">Wartość</div><div class="sum-v">${fmt(S.value)}</div></div>
+      <div class="sum-c"><div class="sum-l">Powierzchnia</div><div class="sum-v">${S.area} m²</div></div>
+      <div class="sum-c"><div class="sum-l">Materiał / rok</div><div class="sum-v">${MN[S.material]||''} · ${S.year}</div></div>
+      ${S.addr?`<div class="sum-c" style="grid-column:1/-1"><div class="sum-l">Lokalizacja</div><div class="sum-v" style="font-size:12px">${esc(S.addr)}</div></div>`:''}
+    </div>
+    <div style="margin-bottom:1.25rem"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Zakres ochrony</div>${[...S.covs].map(k=>`<span class="cbadge">${cn(k)}</span>`).join('')}</div>
+    ${sec.length?`<p style="font-size:12px;color:var(--text3);margin-bottom:1.25rem"><i class="ti ti-lock"></i> Zabezpieczenia: ${sec.join(' · ')}</p>`:''}
+    <div class="sep"></div>
+    <div style="margin-bottom:1.25rem">${lines.map(l=>`<div class="ppl ${l.t==='dis'?'disc':''}"><span class="pl" style="${l.t==='base'?'font-weight:600;color:var(--text)':''}">${l.l}</span><span class="pv">${l.t==='dis'?'−'+fmt(-l.v):fmt(l.v)}</span></div>`).join('')}<div class="ppl tot"><span>Łączna składka roczna</span><span class="pv">${fmt(annual)}</span></div></div>
+    <div class="share-box">
+      <i class="ti ti-link" style="color:var(--info-t);flex-shrink:0"></i>
+      <span class="share-url">${shareUrl}</span>
+      <button class="btn sm" onclick="copyLink('${shareUrl}')"><i class="ti ti-copy"></i> Kopiuj</button>
+    </div>
+    <button class="btn prim" style="width:100%;margin-bottom:8px" onclick="saveQuote()"><i class="ti ti-device-floppy"></i> Zapisz kwotowanie</button>
+    <button class="btn" style="width:100%;margin-bottom:1rem" onclick="S.step=5;render()"><i class="ti ti-edit"></i> Edytuj zakres</button>
+    <div id="packages-section">${renderPackages()}</div>
+    <button class="btn ghost" style="width:100%;margin-top:8px" onclick="resetCalc();render()"><i class="ti ti-refresh"></i> Nowe kwotowanie</button>
+    <p style="font-size:10px;color:var(--text3);margin-top:12px;line-height:1.5">Kalkulator ma charakter orientacyjny. Ostateczna składka zależy od indywidualnej oceny ryzyka. Ceny w PLN netto.</p>
+  </div>`;
+}
+
+function renderResult2(){
+  const el=document.getElementById('calc-form');
+  if(el&&S.step===6)el.innerHTML=renderResult();
+}
+
+function renderPackages(){
+  if(S.pkgLoading)return`<div class="lrow"><span class="spin"></span> AI generuje rekomendacje pakietów…</div>`;
+  if(!S.packages)return'';
+  const pkgs=S.packages;
+  return`<div style="margin-top:1.25rem">
+    <div class="card-title"><i class="ti ti-stars"></i> Rekomendowane pakiety</div>
+    <div class="pkg-grid">${pkgs.map((p,i)=>`<div class="pkg ${i===1?'recommended':''}">
+      ${i===1?`<div class="pkg-badge"><i class="ti ti-star-filled"></i> Rekomendowany</div>`:''}
+      <div class="pkg-name">${p.name}</div>
+      <div class="pkg-price">${fmt(p.price)}<span> / rok</span></div>
+      <ul class="pkg-feat">${p.features.map(f=>`<li>${f}</li>`).join('')}</ul>
+      <div class="pkg-ai">${p.reason}</div>
+      <button class="btn prim sm" style="width:100%;margin-top:10px" onclick="alert('W wersji produkcyjnej: przejście do zamówienia pakietu ${p.name}')">Wybierz pakiet</button>
+    </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function render(){
+  if(LMap&&S.step!==2){LMap.remove();LMap=null;}
+  const form=document.getElementById('calc-form');
+  const pp=document.getElementById('price-panel');
+  if(!form||!pp)return;
+  const content=S.step===1?renderStep1():S.step===2?renderStep2():S.step===3?renderStep3():S.step===4?renderStep4():S.step===5?renderStep5():renderResult();
+  form.innerHTML=content;
+  pp.innerHTML=renderPricePanel();
+  if(S.step===2&&S.lat&&!LMap)setTimeout(initMap,50);
+}
+
+function updPP(){
+  const pp=document.getElementById('price-panel');
+  if(pp)pp.innerHTML=renderPricePanel();
+}
+
+/* ==================== MAP & FLOOD ==================== */
+function initMap(){
+  const el=document.getElementById('map-el');
+  if(!el||!S.lat||LMap)return;
+  LMap=L.map('map-el').setView([S.lat,S.lng],14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(LMap);
+  try{L.tileLayer.wms('https://wody.isok.gov.pl/wss/service/wms/guest/ISOK_POWODZIOWE/MapServer/WMSServer',{layers:'0,1',format:'image/png',transparent:true,opacity:0.5,attribution:'© ISOK Wody Polskie'}).addTo(LMap);}catch(e){}
+  const col=S.floodZone==='Q100'?'#ef4444':S.floodZone==='Q500'?'#f59e0b':'#78a742';
+  L.circleMarker([S.lat,S.lng],{radius:10,fillColor:col,color:'white',weight:2.5,fillOpacity:1}).addTo(LMap).bindPopup(`<b>${esc(S.addr)}</b>`).openPopup();
+}
+
+async function doFlood(){
+  const ain=document.getElementById('addr-in');
+  S.addr=(ain?ain.value:S.addr).trim();
+  if(!S.addr)return;
+  S.floodLoading=true;
+  const btn=document.getElementById('btn-fl');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Geocoduję...';}
+  try{
+    const gr=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(S.addr+', Polska')}&format=json&limit=1&countrycodes=pl&accept-language=pl`);
+    const gd=await gr.json();
+    if(!gd.length){alert('Nie znaleziono adresu w Polsce. Spróbuj podać pełniejszy adres.');S.floodLoading=false;render();return;}
+    S.lat=parseFloat(gd[0].lat);S.lng=parseFloat(gd[0].lon);S.city=gd[0].display_name;
+    S.floodZone=null;S.floodExp='';S.floodLoading=false;
+    render();
+    const fr=document.getElementById('flood-res');
+    if(fr)fr.innerHTML=`<div class="lrow"><span class="spin"></span> AI sprawdza strefę zagrożenia powodziowego ISOK…</div>`;
+    if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analizuję...';}
+    if(!API_KEY){
+      const fakeZones=['brak','brak','brak','Q500','Q100'];
+      const fz=fakeZones[Math.floor(Math.random()*fakeZones.length)];
+      S.floodZone=fz;
+      S.floodExp=fz==='brak'?`Lokalizacja ${S.city.split(',')[0]} nie wykazuje istotnego ryzyka powodziowego w dostępnych danych ISOK.`:fz==='Q500'?`Obszar może być narażony na powódź o prawdopodobieństwie 0.2% rocznie (raz na 500 lat). Rekomendujemy ochronę przeciwpowodziową.`:`Lokalizacja wskazuje na strefę zagrożenia Q100 (powódź raz na 100 lat). Silnie rekomendujemy ubezpieczenie od zalania.`;
+      updateFloodUI();return;
+    }
+    const ar=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:`Oceń ryzyko powodziowe dla lokalizacji:\nAdres: ${S.addr}\nWspółrzędne: ${S.lat.toFixed(4)}N, ${S.lng.toFixed(4)}E\nMiejscowość: ${S.city.split(',').slice(0,2).join(',')}\n\nOdpowiedz TYLKO JSON:\n{"riskLevel":"brak","explanation":"jedno zdanie po polsku"}\n\nriskLevel: brak/Q500/Q100. Bazuj na historii powodzi, bliskości rzek i ukształtowaniu terenu Polski.`}]})});
+    const ad=await ar.json();
+    const res=JSON.parse(ad.content[0].text.trim().replace(/```json|```/g,'').trim());
+    S.floodZone=res.riskLevel;S.floodExp=res.explanation;
+    updateFloodUI();
+  }catch(e){console.error(e);S.floodLoading=false;const fr=document.getElementById('flood-res');if(fr)fr.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:6px 0"><i class="ti ti-alert-circle"></i> Nie udało się sprawdzić strefy. Sprawdź połączenie i spróbuj ponownie.</div>`;if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-map-pin"></i> Sprawdź strefę';}}
+}
+
+function updateFloodUI(){
+  const fz=S.floodZone;
+  const fcls=fz==='brak'?'fb-ok':fz==='Q500'?'fb-w':'fb-d';
+  const flbl=fz==='brak'?'Brak istotnego ryzyka powodziowego':fz==='Q500'?'Strefa zagrożenia Q500 (raz na 500 lat)':'Strefa zagrożenia Q100 (raz na 100 lat)';
+  const fico=fz==='brak'?'ti-shield-check':'ti-alert-triangle';
+  const fr=document.getElementById('flood-res');
+  if(fr)fr.innerHTML=`<span class="fbadge ${fcls}"><i class="ti ${fico}"></i>${flbl}</span><div class="fexp">${esc(S.floodExp)}</div>`;
+  if(LMap){const col=fz==='Q100'?'#ef4444':fz==='Q500'?'#f59e0b':'#78a742';LMap.eachLayer(l=>{if(l instanceof L.CircleMarker)LMap.removeLayer(l);});L.circleMarker([S.lat,S.lng],{radius:10,fillColor:col,color:'white',weight:2.5,fillOpacity:1}).addTo(LMap).bindPopup(`<b>${esc(S.addr)}</b><br><small>${flbl}</small>`).openPopup();}
+  const btn=document.getElementById('btn-fl');
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Sprawdź ponownie';}
+  updPP();
+}
+
+async function loadPackages(){
+  if(!S.value||!S.type)return;
+  S.pkgLoading=true;
+  const ps=document.getElementById('packages-section');
+  if(ps)ps.innerHTML=renderPackages();
+  const{annual}=calcPrice(S,CFG);
+  if(!API_KEY){
+    S.packages=[
+      {name:'Podstawowy',price:Math.round(annual*0.75),features:['Mury i elementy stałe','Zalanie (standard)','Przepięcie elektryczne'],reason:'Minimalna ochrona bez opcji dodatkowych. Dobra dla ograniczonego budżetu.'},
+      {name:'Standard',price:annual,features:[...S.covs].map(k=>cn(k)).slice(0,4),reason:`Rekomendowany dla ${TN[S.type]||'tej nieruchomości'}. Optymalny stosunek ceny do zakresu ochrony.`},
+      {name:'Premium',price:Math.round(annual*1.35),features:['Pełny zakres + OC','Assistance 24h Premium','NNW dla domowników','Ubezpieczenie sprzętu'],reason:'Kompleksowa ochrona dla wymagających. Pokrycie również poza nieruchomością.'}
+    ];
+    S.pkgLoading=false;
+    if(ps)ps.innerHTML=renderPackages();
+    return;
+  }
+  try{
+    const ar=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:`Stwórz 3 pakiety ubezpieczenia nieruchomości dla:\nTyp: ${TN[S.type]}\nWartość: ${S.value} PLN\nMateriał: ${MN[S.material]}\nRok: ${S.year}\nStrefa powodziowa: ${S.floodZone||'nieznana'}\nAktualny zakres: ${[...S.covs].map(k=>cn(k)).join(', ')}\nSładka aktualna: ${annual} PLN/rok\n\nOdpowiedz TYLKO JSON (bez markdown):\n[{"name":"Podstawowy","price":NUMBER,"features":["cecha 1","cecha 2","cecha 3"],"reason":"jedno zdanie rekomendacji"},{"name":"Standard","price":NUMBER,...},{"name":"Premium","price":NUMBER,...}]\n\nPodstawowy to ok 70% ceny aktualnej, Standard to aktualna cena, Premium to ok 140%.`}]})});
+    const ad=await ar.json();
+    S.packages=JSON.parse(ad.content[0].text.trim().replace(/```json|```/g,'').trim());
+  }catch(e){S.packages=[{name:'Podstawowy',price:Math.round(annual*0.7),features:['Mury','Zalanie','Przepięcie'],reason:'Minimalna ochrona.'},{name:'Standard',price:annual,features:[...S.covs].map(k=>cn(k)),reason:'Aktualny wybór.'},{name:'Premium',price:Math.round(annual*1.4),features:['Pełny zakres + NNW','Assistance Premium'],reason:'Maksymalna ochrona.'}];}
+  S.pkgLoading=false;
+  if(ps)ps.innerHTML=renderPackages();
+}
+
+/* ==================== QUOTES ==================== */
+function saveQuote(){
+  const{annual}=calcPrice(S,CFG);
+  const id=S.savedId||uid();
+  S.savedId=id;
+  const q={id,type:S.type,addr:S.addr,value:S.value,material:S.material,year:S.year,area:S.area,floodZone:S.floodZone,alarm:S.alarm,monitoring:S.monitoring,doors:S.doors,fire:S.fire,covs:[...S.covs],annual,status:'new',createdAt:new Date().toISOString(),client:''};
+  const idx=QUOTES.findIndex(x=>x.id===id);
+  if(idx>=0)QUOTES[idx]=q;else QUOTES.unshift(q);
+  saveQuotes();
+  alert(`Kwotowanie zapisane!\nLink: ${location.origin}/q/${id}\n\nMożesz je znaleźć w zakładce "Moje oferty".`);
+}
+
+function copyLink(url){navigator.clipboard.writeText(url).then(()=>alert('Link skopiowany do schowka!')).catch(()=>alert('Link: '+url));}
+
+function renderQuotesList(){
+  const el=document.getElementById('quotes-list');
+  if(!el)return;
+  if(!QUOTES.length){el.innerHTML=`<div class="empty"><i class="ti ti-file-off"></i><p>Brak zapisanych ofert.</p><button class="btn prim" onclick="showTab('calc')" style="margin-top:1rem"><i class="ti ti-plus"></i> Nowe kwotowanie</button></div>`;return;}
+  el.innerHTML=QUOTES.map(q=>`<div class="ql-item">
+    <div class="ql-icon"><i class="ti ${q.type==='mieszkanie'?'ti-building':q.type==='letniskowy'?'ti-tent':'ti-home-2'}"></i></div>
+    <div class="ql-body">
+      <div class="ql-title">${TN[q.type]||'Nieruchomość'} · ${q.area} m² · ${q.year} r.</div>
+      <div class="ql-sub">${q.addr||'Brak adresu'} · Wartość: ${fmt(q.value)}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="ql-price">${fmt(q.annual)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">/ rok</div>
+    </div>
+    <div class="ql-actions">
+      <button class="btn sm" onclick="copyLink('${location.origin}/q/${q.id}')"><i class="ti ti-link"></i></button>
+      <button class="btn sm" onclick="deleteQuote('${q.id}')"><i class="ti ti-trash" style="color:var(--err-t)"></i></button>
+    </div>
+  </div>`).join('');
+}
+
+function deleteQuote(id){if(!confirm('Usunąć to kwotowanie?'))return;QUOTES=QUOTES.filter(q=>q.id!==id);saveQuotes();renderQuotesList();}
+
+/* ==================== AGENT ==================== */
+function renderAgent(){
+  const statsEl=document.getElementById('agent-stats');
+  const listEl=document.getElementById('agent-list');
+  if(!statsEl||!listEl)return;
+  const total=QUOTES.length,nw=QUOTES.filter(q=>q.status==='new').length,ct=QUOTES.filter(q=>q.status==='contact').length,cl=QUOTES.filter(q=>q.status==='closed').length;
+  const totalVal=QUOTES.reduce((s,q)=>s+q.annual,0);
+  statsEl.innerHTML=`
+    <div class="stat-card"><div class="stat-n">Wszystkie kwotowania</div><div class="stat-v">${total}</div><div class="stat-sub">od uruchomienia</div></div>
+    <div class="stat-card"><div class="stat-n"><span class="status-badge st-new">Nowe</span></div><div class="stat-v">${nw}</div><div class="stat-sub">wymaga kontaktu</div></div>
+    <div class="stat-card"><div class="stat-n"><span class="status-badge st-contact">W kontakcie</span></div><div class="stat-v">${ct}</div><div class="stat-sub">trwa rozmowa</div></div>
+    <div class="stat-card"><div class="stat-n">Portfolio roczne</div><div class="stat-v" style="font-size:18px">${fmtR(totalVal)}</div><div class="stat-sub">potencjalne składki</div></div>`;
+  const filter=document.getElementById('agent-filter')?.value||'all';
+  const filtered=QUOTES.filter(q=>filter==='all'||q.status===filter);
+  if(!filtered.length){listEl.innerHTML=`<div class="empty" style="padding:2rem"><i class="ti ti-inbox"></i><p>Brak kwotowań${filter!=='all'?' w tym statusie':''}.</p></div>`;return;}
+  listEl.innerHTML=filtered.map(q=>{
+    const st=q.status||'new';
+    const stLabel={new:'Nowe',contact:'W kontakcie',closed:'Zamknięte'}[st]||st;
+    const stCls={new:'st-new',contact:'st-contact',closed:'st-closed'}[st]||'';
+    return`<div class="ql-item">
+      <div class="ql-icon"><i class="ti ${q.type==='mieszkanie'?'ti-building':'ti-home-2'}"></i></div>
+      <div class="ql-body">
+        <div class="ql-title">${TN[q.type]||'Nieruchomość'} · ${q.area} m² · ${q.year} r. <span class="status-badge ${stCls}" style="margin-left:6px">${stLabel}</span></div>
+        <div class="ql-sub">${q.addr||'—'} · ${fmt(q.value)} · ID: ${q.id}</div>
+      </div>
+      <div style="text-align:right"><div class="ql-price">${fmt(q.annual)}</div><div style="font-size:11px;color:var(--text3)">/rok</div></div>
+      <div class="ql-actions">
+        <select onchange="changeStatus('${q.id}',this.value)" style="font-size:12px;padding:4px 8px;width:auto">
+          <option value="new" ${st==='new'?'selected':''}>Nowe</option>
+          <option value="contact" ${st==='contact'?'selected':''}>W kontakcie</option>
+          <option value="closed" ${st==='closed'?'selected':''}>Zamknięte</option>
+        </select>
+        <button class="btn sm" onclick="copyLink('${location.origin}/q/${q.id}')"><i class="ti ti-link"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function changeStatus(id,status){const q=QUOTES.find(x=>x.id===id);if(q){q.status=status;saveQuotes();renderAgent();}}
+
+/* ==================== CONFIGURATOR ==================== */
+function renderConfig(){
+  const el=document.getElementById('config-content');if(!el)return;
+  if(!CFG_UNLOCKED){
+    el.innerHTML=`<div class="card"><div class="cfg-lock">
+      <div class="cfg-lock-icon"><i class="ti ti-lock"></i></div>
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:8px">Konfiguracja produktu ubezpieczeniowego</h3>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem">Ten panel pozwala ubezpieczycielowi konfigurować parametry produktu — stawki, mnożniki, dostępność opcji — na wzór platformy RIFE.</p>
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+        <input type="password" id="cfg-pw" placeholder="Hasło dostępu" style="width:200px" onkeydown="if(event.key==='Enter')unlockCfg()">
+        <button class="btn prim" onclick="unlockCfg()"><i class="ti ti-lock-open"></i> Odblokuj</button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:10px">Demo: hasło to <code style="background:var(--bg2);padding:2px 6px;border-radius:4px">sollers</code></p>
+    </div></div>`;
+    return;
+  }
+  const prev=calcPrice({type:'dom',material:'mur',year:2005,area:150,value:600000,floodZone:null,alarm:true,monitoring:false,doors:true,fire:false,renovation:false,covs:new Set(['mury','oc','kradziez','zalanie'])},CFG);
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+    <h2 style="font-size:18px;font-weight:700"><i class="ti ti-settings"></i> Konfiguracja produktu</h2>
+    <span style="font-size:12px;color:var(--ok-t)"><i class="ti ti-lock-open"></i> Tryb ubezpieczyciela</span>
+  </div>
+  <div class="cfg-grid">
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <div class="cfg-section-title"><i class="ti ti-percentage"></i> Stawki bazowe</div>
+        <div class="cfg-row">
+          <div class="cfg-row-l"><div class="cfg-row-n">Stawka bazowa</div><div class="cfg-row-d">% wartości nieruchomości rocznie</div></div>
+          <div style="text-align:right"><div style="font-size:16px;font-weight:700;color:var(--green)">${(CFG.baseRate*100).toFixed(3)}%</div>
+          <input type="range" class="cfg-slider" min="0.05" max="0.50" step="0.01" value="${(CFG.baseRate*100).toFixed(2)}" oninput="CFG.baseRate=parseFloat(this.value)/100;this.previousElementSibling.textContent=parseFloat(this.value).toFixed(3)+'%';refreshCfgPreview()"></div>
+        </div>
+        <div class="cfg-section-title" style="margin-top:1rem"><i class="ti ti-layers-intersect"></i> Mnożniki materiałowe</div>
+        ${Object.entries(CFG.matMult).map(([k,v])=>`<div class="cfg-row"><div class="cfg-row-l"><div class="cfg-row-n">${k.charAt(0).toUpperCase()+k.slice(1)}</div></div><input type="number" class="cfg-input" value="${v}" min="0.5" max="3" step="0.05" oninput="CFG.matMult['${k}']=parseFloat(this.value)||1;refreshCfgPreview()"></div>`).join('')}
+        <div class="cfg-section-title" style="margin-top:1rem"><i class="ti ti-calendar"></i> Mnożniki wiekowe</div>
+        ${[['pre1945nr','Przed 1945 (bez remontu)'],['pre1945r','Przed 1945 (po remoncie)'],['y45_70','1945–1970'],['y70_00','1970–2000'],['modern','Po 2000']].map(([k,lbl])=>`<div class="cfg-row"><div class="cfg-row-l"><div class="cfg-row-n">${lbl}</div></div><input type="number" class="cfg-input" value="${CFG.ageMult[k]}" min="0.5" max="3" step="0.05" oninput="CFG.ageMult['${k}']=parseFloat(this.value)||1;refreshCfgPreview()"></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="cfg-section-title"><i class="ti ti-lock"></i> Rabaty za zabezpieczenia (%)</div>
+        ${Object.entries(CFG.secDisc).map(([k,v])=>`<div class="cfg-row"><div class="cfg-row-l"><div class="cfg-row-n">${{alarm:'Alarm',monitoring:'Monitoring 24h',doors:'Drzwi antywłam.',fire:'System p.poż.'}[k]||k}</div></div><input type="number" class="cfg-input" value="${v}" min="0" max="30" step="1" oninput="CFG.secDisc['${k}']=parseInt(this.value)||0;refreshCfgPreview()"></div>`).join('')}
+      </div>
+    </div>
+    <div>
+      <div class="preview-box card" style="margin-bottom:1rem">
+        <div class="preview-title"><i class="ti ti-eye"></i> Podgląd na żywo — przykładowy klient</div>
+        <div style="font-size:12px;color:var(--green-dd);margin-bottom:10px" id="cfg-prev-desc">Dom murowy 2005 r., 150 m², wartość 600 000 PLN, alarm + drzwi, mury + OC + kradzież + zalanie</div>
+        <div class="preview-amount" id="cfg-prev-price">${fmt(prev.annual)}</div>
+        <div style="font-size:12px;color:var(--green-dd);margin-top:2px">/rok · ${fmt(prev.monthly)}/mies.</div>
+        <div style="margin-top:.75rem" id="cfg-prev-lines">${prev.lines.map(l=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--green-dd);padding:2px 0;border-bottom:1px solid rgba(120,167,66,.2)"><span>${l.l}</span><span>${l.t==='dis'?'−'+fmt(-l.v):fmt(l.v)}</span></div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="cfg-section-title"><i class="ti ti-toggle-right"></i> Dostępność opcji</div>
+        ${Object.entries(CFG.opts).map(([k,o])=>`<div class="cfg-row">
+          <div class="cfg-row-l"><div class="cfg-row-n">${cn(k)}</div><div class="cfg-row-d">${o.fixed?`${o.fixed} zł/rok`:o.pct?`${(o.pct*100).toFixed(3)}% wartości`:''}</div></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${o.fixed!==null?`<input type="number" class="cfg-input" style="width:70px" value="${o.fixed||0}" min="0" step="10" oninput="CFG.opts['${k}'].fixed=parseInt(this.value)||0;refreshCfgPreview()">`:o.pct!==null?`<input type="number" class="cfg-input" style="width:70px" value="${((o.pct||0)*10000).toFixed(1)}" min="0" step="0.1" oninput="CFG.opts['${k}'].pct=parseFloat(this.value)/10000||0;refreshCfgPreview()">²`:''}
+            <button class="toggle ${o.on?'on':''}" onclick="CFG.opts['${k}'].on=!CFG.opts['${k}'].on;this.classList.toggle('on');refreshCfgPreview()"></button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function unlockCfg(){
+  const pw=document.getElementById('cfg-pw')?.value;
+  if(pw==='sollers'){CFG_UNLOCKED=true;renderConfig();}
+  else alert('Nieprawidłowe hasło.');
+}
+
+function refreshCfgPreview(){
+  const prev=calcPrice({type:'dom',material:'mur',year:2005,area:150,value:600000,floodZone:null,alarm:true,monitoring:false,doors:true,fire:false,renovation:false,covs:new Set(['mury','oc','kradziez','zalanie'])},CFG);
+  const pp=document.getElementById('cfg-prev-price');const pl=document.getElementById('cfg-prev-lines');
+  if(pp)pp.textContent=fmt(prev.annual);
+  if(pl)pl.innerHTML=prev.lines.map(l=>`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--green-dd);padding:2px 0;border-bottom:1px solid rgba(120,167,66,.2)"><span>${l.l}</span><span>${l.t==='dis'?'−'+fmt(-l.v):fmt(l.v)}</span></div>`).join('');
+  if(S.step===6||S.step<=5)updPP();
+}
+
+/* ==================== TABS ==================== */
+function showTab(tab){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+tab)?.classList.add('active');
+  document.getElementById('tab-'+tab)?.classList.add('active');
+  if(tab==='quotes')renderQuotesList();
+  if(tab==='agent')renderAgent();
+  if(tab==='config')renderConfig();
+}
+
+/* ==================== DARK MODE ==================== */
+function toggleDark(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('dark-icon').className=isDark?'ti ti-moon':'ti ti-sun';
+  localStorage.setItem('si_theme',isDark?'light':'dark');
+}
+
+function resetCalc(){
+  if(LMap){LMap.remove();LMap=null;}
+  Object.assign(S,{step:1,type:null,addr:'',lat:null,lng:null,city:'',floodZone:null,floodExp:'',floodLoading:false,year:1990,material:'mur',area:120,value:500000,floors:2,renovation:false,alarm:false,monitoring:false,doors:false,fire:false,covs:new Set(['mury']),packages:null,pkgLoading:false,payPeriod:'annual',savedId:null});
+}
+
+/* ==================== INIT ==================== */
+(function init(){
+  const theme=localStorage.getItem('si_theme')||'light';
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('dark-icon').className=theme==='dark'?'ti ti-sun':'ti ti-moon';
+  if(!API_KEY&&QUOTES.length===0){
+    const demo=[{id:'A1B2C',type:'dom',addr:'ul. Świdnicka 14, Wrocław',value:650000,material:'mur',year:1980,area:165,floodZone:'Q500',alarm:true,monitoring:false,doors:true,fire:false,covs:['mury','oc','kradziez','zalanie','assistance'],annual:1847,status:'contact',createdAt:new Date(Date.now()-86400000*2).toISOString()},{id:'X9Y3Z',type:'mieszkanie',addr:'ul. Marszałkowska 110, Warszawa',value:480000,material:'mur',year:1998,area:68,floodZone:'brak',alarm:false,monitoring:false,doors:false,fire:false,covs:['mury','oc','szyby'],annual:892,status:'new',createdAt:new Date(Date.now()-86400000*5).toISOString()},{id:'K7L4M',type:'dom',addr:'ul. Gdańska 3, Kraków',value:890000,material:'mur',year:2015,area:210,floodZone:'brak',alarm:true,monitoring:true,doors:true,fire:true,covs:['mury','ruchomosci','oc','kradziez','assistance','wandalizm'],annual:2341,status:'closed',createdAt:new Date(Date.now()-86400000*10).toISOString()}];
+    QUOTES=demo;saveQuotes();
+  }
+  document.getElementById('quotes-count').textContent=QUOTES.length;
+  if(!API_KEY)setTimeout(()=>{document.getElementById('api-banner').style.display='flex';},1500);
+  render();
+  const manifest={name:'Sollers Insurance',short_name:'Sollers Ins.',start_url:'./',display:'standalone',background_color:'#f2fae8',theme_color:'#78a742',icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%2378a742"/><text y=".9em" font-size="80" x="10">🛡</text></svg>',sizes:'192x192',type:'image/svg+xml'}]};
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+  document.getElementById('manifest-link')?.setAttribute('href',URL.createObjectURL(blob));
+})();
+</script>
+</body>
+</html>
