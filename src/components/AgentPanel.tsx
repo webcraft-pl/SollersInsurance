@@ -16,7 +16,6 @@ export default function AgentPanel({ quotes, onStatusChange }: Props) {
 
   const nw = quotes.filter(q => q.status === 'new').length
   const ct = quotes.filter(q => q.status === 'contact').length
-  const cl = quotes.filter(q => q.status === 'closed').length
   const totalVal = quotes.reduce((s, q) => s + q.annual, 0)
 
   const filtered = filter === 'all' ? quotes : quotes.filter(q => q.status === filter)

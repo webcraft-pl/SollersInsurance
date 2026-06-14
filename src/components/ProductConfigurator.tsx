@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { ProductConfig } from '../types'
 import { calcPrice, fmt } from '../lib/pricing'
-import { DEFAULT_CFG } from '../lib/config'
 
 const PREVIEW_STATE = {
   step: 6, type: 'dom' as const, addr: '', lat: null, lng: null, city: '',

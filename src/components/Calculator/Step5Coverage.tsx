@@ -1,5 +1,5 @@
 import type { QuoteState, ProductConfig, Coverage } from '../../types'
-import { fmt, coverageName } from '../../lib/pricing'
+import { fmt } from '../../lib/pricing'
 
 interface Props {
   state: QuoteState
@@ -21,23 +21,25 @@ export default function Step5Coverage({ state, onUpdate, cfg }: Props) {
     (!state.alarm && !state.monitoring ? 1.3 : (!state.alarm || !state.monitoring) ? 1.15 : 1)
   )
 
-  const opts: { id: Coverage; locked?: boolean; show?: boolean; warn?: boolean; n: string; d: string; p: string }[] = [
-    { id: 'mury',       locked: true,  n: 'Mury i elementy stałe',       d: 'Ściany, dach, fundamenty, stałe elementy wyposażenia',                 p: fmt(Math.round(v * cfg.baseRate)) },
-    { id: 'ruchomosci', show: cfg.opts.ruchomosci.on, n: 'Ruchomości domowe',        d: 'Meble, AGD, elektronika, odzież i inne',                        p: fmt(Math.round(v * (cfg.opts.ruchomosci.pct ?? 0.0004))) },
-    { id: 'oc',         show: cfg.opts.oc.on && !isLetniskowy,           n: 'OC w życiu prywatnym',         d: 'Odpowiedzialność za szkody wyrządzone osobom trzecim',              p: `${cfg.opts.oc.fixed ?? 149} zł` },
-    { id: 'assistance', show: cfg.opts.assistance.on, n: 'Assistance 24h',             d: 'Pomoc hydraulika, elektryka, ślusarza 24/7',                    p: `${cfg.opts.assistance.fixed ?? 119} zł` },
-    { id: 'szyby',      show: cfg.opts.szyby.on,      n: 'Szyby i oszklenia',           d: 'Stłuczenia szyb okiennych, drzwiowych, witryn',                 p: `${cfg.opts.szyby.fixed ?? 79} zł` },
-    { id: 'zalanie',    show: cfg.opts.zalanie.on,    warn: fz === 'Q100' || fz === 'Q500',
+  type OptItem = { id: Coverage; locked?: boolean; show?: boolean; warn?: boolean; n: string; d: string; p: string }
+  const allOpts: OptItem[] = [
+    { id: 'mury'       as Coverage, locked: true,                          n: 'Mury i elementy stałe',       d: 'Ściany, dach, fundamenty, stałe elementy wyposażenia',                 p: fmt(Math.round(v * cfg.baseRate)) },
+    { id: 'ruchomosci' as Coverage, show: cfg.opts.ruchomosci.on,          n: 'Ruchomości domowe',           d: 'Meble, AGD, elektronika, odzież i inne',                               p: fmt(Math.round(v * (cfg.opts.ruchomosci.pct ?? 0.0004))) },
+    { id: 'oc'         as Coverage, show: cfg.opts.oc.on && !isLetniskowy, n: 'OC w życiu prywatnym',        d: 'Odpowiedzialność za szkody wyrządzone osobom trzecim',                  p: `${cfg.opts.oc.fixed ?? 149} zł` },
+    { id: 'assistance' as Coverage, show: cfg.opts.assistance.on,          n: 'Assistance 24h',              d: 'Pomoc hydraulika, elektryka, ślusarza 24/7',                           p: `${cfg.opts.assistance.fixed ?? 119} zł` },
+    { id: 'szyby'      as Coverage, show: cfg.opts.szyby.on,               n: 'Szyby i oszklenia',           d: 'Stłuczenia szyb okiennych, drzwiowych, witryn',                        p: `${cfg.opts.szyby.fixed ?? 79} zł` },
+    { id: 'zalanie'    as Coverage, show: cfg.opts.zalanie.on,             warn: fz === 'Q100' || fz === 'Q500',
       n: 'Zalanie i powódź' + (fz && fz !== 'brak' ? ` — strefa ${fz}` : ''),
       d: fz === 'Q100' ? '⚠ Wysoka strefa ryzyka — znaczna dopłata za ryzyko powodziowe'
         : fz === 'Q500' ? '⚠ Umiarkowana strefa ryzyka — dopłata za ryzyko powodziowe'
         : 'Zalanie wodą opadową, pęknięcie rur, powódź rzeczna',
       p: fmt(floodCost) + (fz && fz !== 'brak' ? ' *' : ''),
     },
-    { id: 'przepięcie', show: cfg.opts.przepięcie.on, n: 'Przepięcie elektryczne',       d: 'Uszkodzenia sprzętu od przepięcia w sieci energetycznej',        p: `${cfg.opts.przepięcie.fixed ?? 49} zł` },
-    { id: 'kradziez',   show: cfg.opts.kradziez.on,   n: 'Kradzież z włamaniem',         d: 'Kradzież mienia na skutek włamania' + (!state.alarm && !state.monitoring ? ' — dopłata za brak zabezpieczeń' : ''), p: fmt(theftCost) },
-    { id: 'wandalizm',  show: cfg.opts.wandalizm.on,  n: 'Wandalizm',                    d: 'Umyślne zniszczenie lub uszkodzenie nieruchomości',              p: `${cfg.opts.wandalizm.fixed ?? 59} zł` },
-  ].filter(o => o.locked || o.show)
+    { id: 'przepięcie' as Coverage, show: cfg.opts.przepięcie.on,          n: 'Przepięcie elektryczne',      d: 'Uszkodzenia sprzętu od przepięcia w sieci energetycznej',              p: `${cfg.opts.przepięcie.fixed ?? 49} zł` },
+    { id: 'kradziez'   as Coverage, show: cfg.opts.kradziez.on,            n: 'Kradzież z włamaniem',        d: 'Kradzież mienia na skutek włamania' + (!state.alarm && !state.monitoring ? ' — dopłata za brak zabezpieczeń' : ''), p: fmt(theftCost) },
+    { id: 'wandalizm'  as Coverage, show: cfg.opts.wandalizm.on,           n: 'Wandalizm',                   d: 'Umyślne zniszczenie lub uszkodzenie nieruchomości',                    p: `${cfg.opts.wandalizm.fixed ?? 59} zł` },
+  ]
+  const opts = allOpts.filter(o => o.locked ?? o.show)
 
   const toggleCov = (id: Coverage) => {
     if (id === 'mury') return

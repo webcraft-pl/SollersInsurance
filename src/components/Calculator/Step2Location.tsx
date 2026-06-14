@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { QuoteState, FloodZone, ProductConfig } from '../../types'
+import type { QuoteState, FloodZone } from '../../types'
 import type { Map as LeafletMap } from 'leaflet'
 
 interface Props {
