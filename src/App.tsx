@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { DEFAULT_CFG } from './lib/config'
 import { DEMO_QUOTES } from './lib/demoData'
-import type { QuoteState, ProductConfig, Quote, Tab } from './types'
+import type { QuoteState, ProductConfig, Quote, Tab, QuoteStatus } from './types'
 import Header from './components/Header'
 import ApiBanner from './components/ApiBanner'
 import Calculator from './components/Calculator'
@@ -10,6 +10,12 @@ import QuotesList from './components/QuotesList'
 import AgentPanel from './components/AgentPanel'
 import ProductConfigurator from './components/ProductConfigurator'
 import SharedQuote from './pages/SharedQuote'
+import {
+  isSupabaseConfigured,
+  loadAllQuotesFromDb,
+  updateQuoteStatusInDb,
+  deleteQuoteFromDb,
+} from './lib/supabase'
 
 export const INITIAL_STATE: QuoteState = {
   step: 1, type: null, addr: '', lat: null, lng: null, city: '',
@@ -30,26 +36,53 @@ export default function App() {
   const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('si_quotes')
     const key = sessionStorage.getItem('si_api_key') || ''
     setApiKey(key)
-    if (saved) {
-      setQuotes(JSON.parse(saved))
-    } else {
-      setQuotes(DEMO_QUOTES)
-      sessionStorage.setItem('si_quotes', JSON.stringify(DEMO_QUOTES))
-    }
     const theme = localStorage.getItem('si_theme') || 'light'
     document.documentElement.setAttribute('data-theme', theme)
     if (!key) setTimeout(() => setShowBanner(true), 1500)
+
+    // Ładuj z Supabase, fallback do sessionStorage, fallback do demo
+    if (isSupabaseConfigured()) {
+      loadAllQuotesFromDb().then(dbQuotes => {
+        if (dbQuotes.length > 0) {
+          setQuotes(dbQuotes)
+        } else {
+          // Baza pusta lub brak połączenia — użyj demo
+          setQuotes(DEMO_QUOTES)
+        }
+      }).catch(() => {
+        const saved = sessionStorage.getItem('si_quotes')
+        setQuotes(saved ? JSON.parse(saved) : DEMO_QUOTES)
+      })
+    } else {
+      // Supabase nie skonfigurowany — użyj sessionStorage / demo
+      const saved = sessionStorage.getItem('si_quotes')
+      if (saved) {
+        setQuotes(JSON.parse(saved))
+      } else {
+        setQuotes(DEMO_QUOTES)
+      }
+    }
   }, [])
 
-  const persistQuotes = (qs: Quote[]) => {
-    sessionStorage.setItem('si_quotes', JSON.stringify(qs))
-    setQuotes(qs)
+  // Synchronizuj quotes do sessionStorage (dla /q/:id i offline)
+  useEffect(() => {
+    if (quotes.length > 0) sessionStorage.setItem('si_quotes', JSON.stringify(quotes))
+  }, [quotes])
+
+  const saveQuote = (q: Quote) =>
+    setQuotes(prev => [q, ...prev.filter(x => x.id !== q.id)])
+
+  const deleteQuote = (id: string) => {
+    setQuotes(prev => prev.filter(q => q.id !== id))
+    deleteQuoteFromDb(id)
   }
 
-  const saveQuote = (q: Quote) => persistQuotes([q, ...quotes.filter(x => x.id !== q.id)])
+  const changeStatus = (id: string, status: QuoteStatus) => {
+    setQuotes(prev => prev.map(q => q.id === id ? { ...q, status } : q))
+    updateQuoteStatusInDb(id, status)
+  }
 
   const toggleDark = () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
@@ -93,16 +126,14 @@ export default function App() {
             {activeTab === 'quotes' && (
               <QuotesList
                 quotes={quotes}
-                onDelete={(id) => persistQuotes(quotes.filter(q => q.id !== id))}
+                onDelete={deleteQuote}
                 onNewQuote={() => { setState(INITIAL_STATE); setActiveTab('calc') }}
               />
             )}
             {activeTab === 'agent' && (
               <AgentPanel
                 quotes={quotes}
-                onStatusChange={(id, status) =>
-                  persistQuotes(quotes.map(q => q.id === id ? { ...q, status } : q))
-                }
+                onStatusChange={changeStatus}
               />
             )}
             {activeTab === 'config' && (

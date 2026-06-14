@@ -95,10 +95,20 @@ function toDb(q: Quote): Omit<DbQuote, 'updated_at'> {
 
 // ---- public API ----
 
+export function isSupabaseConfigured(): boolean {
+  return supabase !== null
+}
+
 export async function saveQuoteToDb(q: Quote): Promise<void> {
-  if (!supabase) return
+  if (!supabase) throw new Error('Supabase not configured — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY env vars')
   const { error } = await supabase.from('quotes').upsert(toDb(q))
-  if (error) console.error('Supabase save error:', error.message)
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteQuoteFromDb(id: string): Promise<void> {
+  if (!supabase) return
+  const { error } = await supabase.from('quotes').delete().eq('id', id)
+  if (error) console.error('Supabase delete error:', error.message)
 }
 
 export async function loadQuoteFromDb(id: string): Promise<Quote | null> {

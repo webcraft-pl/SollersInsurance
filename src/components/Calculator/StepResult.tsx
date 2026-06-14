@@ -71,8 +71,14 @@ export default function StepResult({ state, onUpdate, cfg, apiKey, onSaveQuote, 
     }
     onSaveQuote(q)
     onUpdate({ savedId: id })
-    await saveQuoteToDb(q)
-    alert(`Kwotowanie zapisane!\nLink: ${window.location.origin}/q/${id}\n\nMożesz je znaleźć w zakładce "Moje oferty".`)
+    try {
+      await saveQuoteToDb(q)
+      alert(`Kwotowanie zapisane!\nLink: ${window.location.origin}/q/${id}\n\nMożesz je znaleźć w zakładce "Moje oferty".`)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('Save to DB failed:', msg)
+      alert(`Kwotowanie zapisane lokalnie.\nLink: ${window.location.origin}/q/${id}\n\n⚠ Błąd zapisu do bazy:\n${msg}`)
+    }
   }
 
   const copyLink = () => {
