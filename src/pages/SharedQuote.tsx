@@ -1,18 +1,41 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Quote } from '../types'
 import { fmt, coverageName } from '../lib/pricing'
+import { loadQuoteFromDb } from '../lib/supabase'
 
 const TYPE_NAMES: Record<string, string> = { dom: 'Dom jednorodzinny', mieszkanie: 'Mieszkanie', szeregowiec: 'Dom szeregowy', letniskowy: 'Dom letniskowy' }
-const MAT_NAMES: Record<string, string> = { mur: 'Mur/beton', drewno: 'Drewno', prefabrykat: 'Prefabrykat' }
+const MAT_NAMES:  Record<string, string> = { mur: 'Mur/beton', drewno: 'Drewno', prefabrykat: 'Prefabrykat' }
 const FLOOD_LABELS: Record<string, string> = { brak: 'Brak ryzyka', Q500: 'Strefa Q500', Q100: 'Strefa Q100' }
 
 interface Props {
-  quotes: Quote[]
+  quotes: Quote[]  // sesja — fallback gdy Supabase niedostępny
 }
 
 export default function SharedQuote({ quotes }: Props) {
   const { id } = useParams<{ id: string }>()
-  const quote = quotes.find(q => q.id === id)
+  const [quote, setQuote] = useState<Quote | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!id) { setLoading(false); return }
+    // 1. szukaj w sessionStorage (szybkie)
+    const local = quotes.find(q => q.id === id)
+    if (local) { setQuote(local); setLoading(false); return }
+    // 2. fallback: Supabase
+    loadQuoteFromDb(id).then(q => {
+      setQuote(q)
+      setLoading(false)
+    })
+  }, [id, quotes])
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: 600, margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
+        <span className="spin" /> <span style={{ color: 'var(--text3)' }}>Wczytywanie oferty…</span>
+      </div>
+    )
+  }
 
   if (!quote) {
     return (

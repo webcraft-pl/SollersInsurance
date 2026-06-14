@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { QuoteState, ProductConfig, Quote, PayPeriod, Package } from '../../types'
 import { calcPrice, fmt, coverageName, uid } from '../../lib/pricing'
+import { saveQuoteToDb } from '../../lib/supabase'
 
 const TYPE_NAMES: Record<string, string> = { dom: 'Dom jednorodzinny', mieszkanie: 'Mieszkanie', szeregowiec: 'Dom szeregowy', letniskowy: 'Dom letniskowy' }
 const MAT_NAMES: Record<string, string> = { mur: 'Mur/beton', drewno: 'Drewno', prefabrykat: 'Prefabrykat' }
@@ -59,7 +60,7 @@ export default function StepResult({ state, onUpdate, cfg, apiKey, onSaveQuote, 
     }
   }
 
-  const saveQuote = () => {
+  const saveQuote = async () => {
     const id = state.savedId || qid
     const q: Quote = {
       id, type: state.type!, addr: state.addr, value: state.value,
@@ -70,6 +71,7 @@ export default function StepResult({ state, onUpdate, cfg, apiKey, onSaveQuote, 
     }
     onSaveQuote(q)
     onUpdate({ savedId: id })
+    await saveQuoteToDb(q)
     alert(`Kwotowanie zapisane!\nLink: ${window.location.origin}/q/${id}\n\nMożesz je znaleźć w zakładce "Moje oferty".`)
   }
 
