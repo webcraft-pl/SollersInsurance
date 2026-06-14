@@ -26,10 +26,25 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
 
   useEffect(() => {
     if (!state.lat || !mapElRef.current) return
-    if (mapRef.current) return
+
+    let cancelled = false
+
+    // Leaflet zostawia _leaflet_id na elemencie nawet po .remove() —
+    // React 18 StrictMode odpala efekty dwukrotnie, co powoduje
+    // "Map container is already initialized". Usuwamy _leaflet_id ręcznie.
+    const el = mapElRef.current as HTMLElement & { _leaflet_id?: number }
+    if (mapRef.current) {
+      mapRef.current.remove()
+      mapRef.current = null
+    }
+    delete el._leaflet_id
 
     import('leaflet').then(L => {
-      if (!mapElRef.current || mapRef.current) return
+      if (cancelled || !mapElRef.current) return
+      // Ponowne sprawdzenie po async: może inny efekt zdążył zainicjować mapę
+      const container = mapElRef.current as HTMLElement & { _leaflet_id?: number }
+      if (container._leaflet_id) return
+
       const map = L.map(mapElRef.current).setView([state.lat!, state.lng!], 14)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap', maxZoom: 19,
@@ -43,10 +58,11 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
       const col = state.floodZone === 'Q100' ? '#ef4444' : state.floodZone === 'Q500' ? '#f59e0b' : '#78a742'
       L.circleMarker([state.lat!, state.lng!], { radius: 10, fillColor: col, color: 'white', weight: 2.5, fillOpacity: 1 })
         .addTo(map).bindPopup(`<b>${state.addr}</b>`).openPopup()
-      mapRef.current = map
+      if (!cancelled) mapRef.current = map
     })
 
     return () => {
+      cancelled = true
       mapRef.current?.remove()
       mapRef.current = null
     }
