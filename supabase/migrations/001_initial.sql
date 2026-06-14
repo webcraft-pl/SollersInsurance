@@ -108,6 +108,13 @@ create policy "public update"
   using (true);
 
 -- ============================================================
+-- GRANT dla ról Supabase — wymagane obok RLS
+-- Bez tego: "permission denied for table quotes"
+-- ============================================================
+grant select, insert, update, delete on table quotes to anon;
+grant select, insert, update, delete on table quotes to authenticated;
+
+-- ============================================================
 -- Dane demonstracyjne (opcjonalne — można usunąć przed prod)
 -- Pasują do src/lib/demoData.ts
 -- ============================================================
