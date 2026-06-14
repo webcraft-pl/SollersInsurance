@@ -23,6 +23,7 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
   const mapElRef = useRef<HTMLDivElement>(null)
   const [addr, setAddr] = useState(state.addr)
   const [loading, setLoading] = useState(false)
+  const [floodSource, setFloodSource] = useState<'isok' | 'ai' | 'isok+ai' | 'demo' | ''>('')
 
   useEffect(() => {
     if (!state.lat || !mapElRef.current) return
@@ -98,10 +99,11 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
       })
 
       if (res.ok) {
-        const data = await res.json() as { riskLevel: FloodZone; explanation: string }
+        const data = await res.json() as { riskLevel: FloodZone; explanation: string; source?: string }
+        setFloodSource((data.source as typeof floodSource) || '')
         onUpdate({ floodZone: data.riskLevel, floodExp: data.explanation })
       } else {
-        // fallback — random demo if API not configured
+        // fallback — random demo jeśli API nie skonfigurowane
         const zones: FloodZone[] = ['brak', 'brak', 'brak', 'Q500', 'Q100']
         const fz = zones[Math.floor(Math.random() * zones.length)]
         const exp = fz === 'brak'
@@ -109,6 +111,7 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
           : fz === 'Q500'
           ? 'Obszar może być narażony na powódź raz na 500 lat. Rekomendujemy ochronę przeciwpowodziową.'
           : 'Strefa zagrożenia Q100 (raz na 100 lat). Silnie rekomendujemy ubezpieczenie od zalania.'
+        setFloodSource('demo')
         onUpdate({ floodZone: fz, floodExp: exp })
       }
     } catch (e) {
@@ -154,6 +157,23 @@ export default function Step2Location({ state, onUpdate, apiKey }: Props) {
             <i className={`ti ${fico}`} />
             {flbl}
           </span>
+          {floodSource && (
+            <span style={{
+              marginLeft: 8, fontSize: 10, fontWeight: 600, padding: '2px 7px',
+              borderRadius: 10, verticalAlign: 'middle',
+              background: floodSource === 'isok' || floodSource === 'isok+ai'
+                ? 'rgba(34,139,34,.12)' : floodSource === 'ai'
+                ? 'rgba(59,130,246,.12)' : 'rgba(120,120,120,.12)',
+              color: floodSource === 'isok' || floodSource === 'isok+ai'
+                ? '#166534' : floodSource === 'ai'
+                ? '#1d4ed8' : '#555',
+            }}>
+              {floodSource === 'isok' && <><i className="ti ti-database" /> Wody Polskie ISOK</>}
+              {floodSource === 'ai' && <><i className="ti ti-sparkles" /> AI (Claude)</>}
+              {floodSource === 'isok+ai' && <><i className="ti ti-database" /> ISOK + AI</>}
+              {floodSource === 'demo' && <><i className="ti ti-test-pipe" /> tryb demo</>}
+            </span>
+          )}
           {state.floodExp && <div className="fexp">{state.floodExp}</div>}
         </div>
       )}
