@@ -40,7 +40,16 @@ export default function App() {
     setApiKey(key)
     const theme = localStorage.getItem('si_theme') || 'light'
     document.documentElement.setAttribute('data-theme', theme)
-    if (!key) setTimeout(() => setShowBanner(true), 1500)
+
+    // Sprawdź czy serwer ma skonfigurowany klucz AI — jeśli tak, nie pokazuj banera
+    fetch('/api/health')
+      .then(r => r.ok ? r.json() : null)
+      .then((h: { ai?: boolean } | null) => {
+        if (!h?.ai && !key) setTimeout(() => setShowBanner(true), 1500)
+      })
+      .catch(() => {
+        if (!key) setTimeout(() => setShowBanner(true), 1500)
+      })
 
     // Ładuj z Supabase, fallback do sessionStorage, fallback do demo
     if (isSupabaseConfigured()) {
