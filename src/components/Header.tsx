@@ -48,7 +48,7 @@ export default function Header({ activeTab, onTabChange, quotesCount, onToggleDa
           <div className="logo-mark"><i className="ti ti-shield-check" /></div>
           <div className="logo-text">
             <div className="logo-top">Sollers Insurance</div>
-            <div className="logo-bot">Property Calculator · Demo</div>
+            <div className="logo-bot">Property Calculator · <span style={{ color: '#ef4444', fontWeight: 700 }}>DEMO ONLY</span></div>
           </div>
         </div>
 
